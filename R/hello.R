@@ -4,20 +4,20 @@ library(DT)
 library(httr)
 
 meldaKB <- function(){
-  ui <- miniPage(
+  ui <- miniUI::miniPage(
         textInput("search","Search in Packages,Methods, Authors","",width = '100%'),
 
-    miniTabstripPanel(
-      miniTabPanel(id = "pkg","Packages",icon = icon("table"),
-                   miniContentPanel(
+    miniUI::miniTabstripPanel(
+      miniUI::miniTabPanel(id = "pkg","Packages",icon = icon("table"),
+                   minUI::miniContentPanel(
                      (DT::dataTableOutput("packagesTable"))),
       ),
-      miniTabPanel("Method",icon = icon("table"),
-                   miniContentPanel(
+      miniUI::miniTabPanel("Method",icon = icon("table"),
+                   miniUI::miniContentPanel(
                      (DT::dataTableOutput("methodsTable")))
       ),
-      miniTabPanel("Author", icon = icon("table"),
-                   miniContentPanel(
+      miniUI::miniTabPanel("Author", icon = icon("table"),
+                   miniUI::miniContentPanel(
                      ((DT::dataTableOutput("authorsTable")))
                    ))
     )
@@ -37,16 +37,16 @@ meldaKB <- function(){
       res <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100"))
       resAuthor <-  httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100"))
 
-      rv$packages <- data.frame(name = sapply(content(res)$packages,function(x) x$name )
-                                ,description = sapply(content(res)$packages,function(x) x$description ),
-                                version = sapply(content(res)$packages,function(x) x$version ))
+      rv$packages <- data.frame(name = sapply(httr::content(res)$packages,function(x) x$name )
+                                ,description = sapply(httr::content(res)$packages,function(x) x$description ),
+                                version = sapply(httr::content(res)$packages,function(x) x$version ))
 
-      rv$methods = data.frame(name = sapply(content(res)$methods,function(x) x$name),
-                              title = sapply(content(res)$methods,function(x) x$title),
-                              description = sapply(content(res)$methods,function(x) x$description))
+      rv$methods = data.frame(name = sapply(httr::content(res)$methods,function(x) x$name),
+                              title = sapply(httr::content(res)$methods,function(x) x$title),
+                              description = sapply(httr::content(res)$methods,function(x) x$description))
 
-      rv$authors = data.frame(name = sapply(content(resAuthor)$packages,function(x) x$author )
-                              ,Package = sapply(content(resAuthor)$packages,function(x) x$name ))
+      rv$authors = data.frame(name = sapply(httr::content(resAuthor)$packages,function(x) x$author )
+                              ,Package = sapply(httr::content(resAuthor)$packages,function(x) x$name ))
 
     })
 
