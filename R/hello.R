@@ -1,6 +1,11 @@
+library(shiny)
+library(miniUI)
+library(DT)
+library(httr)
+
 meldaKB <- function(){
   ui <- miniPage(
-    textInput("search","Search in Packages,Methods, Authors","",width = '100%'),
+        textInput("search","Search in Packages,Methods, Authors","",width = '100%'),
 
     miniTabstripPanel(
       miniTabPanel(id = "pkg","Packages",icon = icon("table"),
@@ -65,5 +70,3 @@ meldaKB <- function(){
   }
   runGadget(shinyApp(ui, server),  viewer = paneViewer())
 }
-
-meldaKB()
