@@ -279,4 +279,3 @@ meldaKB <- function(){
   }
   runGadget(shinyApp(ui, server),  viewer = paneViewer())
 }
-meldaKB()
