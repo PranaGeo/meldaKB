@@ -1,15 +1,15 @@
-library(shiny)
-library(miniUI)
-library(DT)
-library(httr)
-
 meldaKB <- function(){
+  library(shiny)
+  library(miniUI)
+  library(DT)
+  library(httr)
+
   ui <- miniUI::miniPage(
         textInput("search","Search in Packages,Methods, Authors","",width = '100%'),
 
     miniUI::miniTabstripPanel(
       miniUI::miniTabPanel(id = "pkg","Packages",icon = icon("table"),
-                   minUI::miniContentPanel(
+                   miniUI::miniContentPanel(
                      (DT::dataTableOutput("packagesTable"))),
       ),
       miniUI::miniTabPanel("Method",icon = icon("table"),
