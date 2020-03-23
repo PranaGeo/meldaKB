@@ -5,17 +5,18 @@ meldaKB <- function(){
   library(httr)
 
   ui <- miniUI::miniPage(
-    miniTitleBar(htmlOutput("meldaLogo")),
+    miniTitleBar(div(actionButton("exitBtn","exit"),
+                  style="align:right"),htmlOutput("meldaLogo")),
     textInput("search","","",placeholder = "Enter a keyword",width = '100%'),
     miniUI::miniTabstripPanel(
       miniUI::miniTabPanel(id = "pkg","Packages",icon = icon("table"),
                    miniUI::miniContentPanel(
-                     (DT::dataTableOutput("packagesTable")),
+                     (dataTableOutput("packagesTable")),
                      shiny::htmlOutput("packageDetail"))
                    ),
       miniUI::miniTabPanel("Method",icon = icon("table"),
                    miniUI::miniContentPanel(
-                     (DT::dataTableOutput("methodsTable")),
+                     (dataTableOutput("methodsTable")),
                      shiny::htmlOutput("methodDetail"))
       ),
       miniUI::miniTabPanel("Author", icon = icon("table"),
@@ -218,6 +219,12 @@ meldaKB <- function(){
       })
 
     observe({
+      if(input$exitBtn){
+        stopApp()
+      }
+
+    })
+    observe({
       req(input$search)
       resPackage <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=package"))
       resMethod <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=method"))
@@ -228,8 +235,7 @@ meldaKB <- function(){
                                 version = sapply(httr::content(resPackage)$packages,function(x) x$version ))
 
       rv$methods = data.frame(name = sapply(httr::content(resMethod)$methods,function(x) x$name),
-                              title = sapply(httr::content(resMethod)$methods,function(x) x$title),
-                              description = sapply(httr::content(resMethod)$methods,function(x) x$description),
+                              description = sapply(httr::content(resMethod)$methods,function(x) x$title),
                               package = sapply(content(resMethod)$methods,function(x) x$packageName))
 
       rv$authors = data.frame(name = sapply(httr::content(resAuthor)$packages,function(x) x$author )
@@ -254,17 +260,31 @@ meldaKB <- function(){
 
     output$packagesTable <- DT::renderDataTable({
       req(rv$packages)
-      rv$packages
-    })
+      data.frame(rv$packages)
+      },options = list(
+        columnDefs = list(list(
+          targets = c(1,2,3),
+          render = JS(
+            "function(data, type, row, meta) {",
+            "return type === 'display' && data.length > 14 ?",
+            "'<span title=\"' + data + '\">' + data.substr(0, 14) + '...</span>' : data;",
+            "}")
+        ))), callback = JS('table.page(3).draw(false);')
+      )
+
 
     output$methodsTable <- DT::renderDataTable({
       req(rv$methods)
       rv$methods
-      })
+      },options = list(
+        dom = 't',
+        pageLength = 10
+      ))
 
     output$authorsTable <- DT::renderDataTable({
       req(rv$authors)
       rv$authors
+
     })
 
     output$meldaLogo <-
@@ -280,4 +300,5 @@ meldaKB <- function(){
   }
   runGadget(shinyApp(ui, server),  viewer = paneViewer())
 }
+meldaKB()
 
