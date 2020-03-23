@@ -1,0 +1,4 @@
+Name: Search in All R Packages
+Description: Search in All R packages by using melda.io database
+Binding: meldaKB
+Interactive: true

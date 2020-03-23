@@ -148,9 +148,9 @@ meldaKB <- function(){
     getMethodDetail <- function(input,output){
       methodRes <- httr::GET( paste0( url, "api/", "method-detail?package=",
                                        rv$methodPackageName,"&method=",
-                                       rv$methodMethodName))
+                                      rv$methodMethodName))
 
-      rv$methodDetailOutput <- paste("<br>","<strong><center>Method Detail</center></strong>","<br>",
+            rv$methodDetailOutput <- paste("<br>","<strong><center>Method Detail</center></strong>","<br>",
                                      "<br>","<strong>Usage</strong>:",
                                      paste(content(methodRes)$result$usage,collapse=""),
                                      "<br>","<strong>Name</strong>:",
@@ -162,10 +162,11 @@ meldaKB <- function(){
                                      "<br>","<strong>Alias</strong>",
                                      paste(content(methodRes)$result$alias,collapse=""),
                                      "<br>","<strong>Title</strong>",
-                                     paste(content(methodRes)$result$title,collapse=""),
-                                     "<br>","<strong><center>Arguments</center></strong>"
+                                     paste(content(methodRes)$result$title,collapse="")
       )
 
+      req(content(methodRes)$result$argument)
+      rv$methodDetailOutput <- paste("<br>","<strong><center>Arguments</center></strong>")
       for(i in 1:length(content(methodRes)$result$argument)){
         rv$methodDetailOutput <- paste(rv$methodDetailOutput,'<hr><ul>',
                                         "<li><strong>Name</strong>:",
@@ -210,28 +211,30 @@ meldaKB <- function(){
 
           rv$methodPackageName <- rv$methods[packageRowNum,packageColNum]
           rv$methodMethodName <- rv$methods[methodRowNum,methodColNum]
-
+          rv$methodMethodName <- URLencode(as.character(rv$methodMethodName))
+          rv$methodPackageName <- URLencode(as.character(rv$methodPackageName))
           getMethodDetail(input,output)
         }
       })
 
-
     observe({
       req(input$search)
-      res <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=all"))
-      resAuthor <-  httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100"))
+      resPackage <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=package"))
+      resMethod <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=method"))
+      resAuthor <-  httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=author"))
 
-      rv$packages <- data.frame(name = sapply(httr::content(res)$packages,function(x) x$name )
-                                ,description = sapply(httr::content(res)$packages,function(x) x$description ),
-                                version = sapply(httr::content(res)$packages,function(x) x$version ))
+      rv$packages <- data.frame(name = sapply(httr::content(resPackage)$packages,function(x) x$name )
+                                ,description = sapply(httr::content(resPackage)$packages,function(x) x$description ),
+                                version = sapply(httr::content(resPackage)$packages,function(x) x$version ))
 
-      rv$methods = data.frame(name = sapply(httr::content(res)$methods,function(x) x$name),
-                              title = sapply(httr::content(res)$methods,function(x) x$title),
-                              description = sapply(httr::content(res)$methods,function(x) x$description),
-                              package = sapply(content(res)$methods,function(x) x$packageName))
+      rv$methods = data.frame(name = sapply(httr::content(resMethod)$methods,function(x) x$name),
+                              title = sapply(httr::content(resMethod)$methods,function(x) x$title),
+                              description = sapply(httr::content(resMethod)$methods,function(x) x$description),
+                              package = sapply(content(resMethod)$methods,function(x) x$packageName))
 
       rv$authors = data.frame(name = sapply(httr::content(resAuthor)$packages,function(x) x$author )
                               ,Package = sapply(httr::content(resAuthor)$packages,function(x) x$name ))
+
 
       output$packageDetail <- renderText({
         req(rv$packageDetailOutput)
@@ -269,13 +272,12 @@ meldaKB <- function(){
         c('<a href="https://www.melda.io/">',
           '<img src="',
           "https://i0.wp.com/www.melda.io/wp-content/uploads/2018/10/melda_final.png?w=1080&ssl=1",
-          '"',' ,style="width:"5%", width="5%"',
+          '"',' ,style="width:"7%", width="7%"',
           '>Search in melda.io Knowledge Base</a>',
           '<a href="https://www.melda.io/">'
         )
       })
-
-
   }
   runGadget(shinyApp(ui, server),  viewer = paneViewer())
 }
+
