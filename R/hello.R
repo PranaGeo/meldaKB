@@ -4,33 +4,39 @@ meldaKB <- function(){
   library(DT)
   library(httr)
 
-  ui <- miniUI::miniPage(
-    miniTitleBar(htmlOutput("meldaLogo",style="align:left"),
-                 right = actionButton("exitBtn","Exit")),
-    textInput("search","","",placeholder = "Enter a keyword",width = '100%'),
-    miniUI::miniTabstripPanel(
-      miniUI::miniTabPanel(id = "pkg","Packages",icon = icon("table"),
-                   miniUI::miniContentPanel(padding = 0,
-                     (dataTableOutput("packagesTable",
-                                      height="220px")),
-                     shiny::htmlOutput("packageDetail"))
-                   ),
-      miniUI::miniTabPanel("Methods",icon = icon("table"),
-                   miniUI::miniContentPanel(padding = 0,
-                     (dataTableOutput("methodsTable",
-                                      height="220px")),
-                     shiny::htmlOutput("methodDetail"))
-      ),
-
-        miniUI::miniTabPanel("Authors", icon = icon("table"),
-                             miniUI::miniContentPanel(padding = 0,
-                                                      ((DT::dataTableOutput("authorsTable",
-                                                                            height="220px"))),
-                                                      shiny::htmlOutput("authorDetail")))
-
-
+  ui <- fluidPage(
+    sidebarPanel(
+      fluidRow(
+        column(width = 4,htmlOutput("meldaLogo",style="align:left")),
+        column(width=4,actionButton("homeBtn","Home")),
+        column(width=4,actionButton("exitBtn","Exit"))
+        ),
+        fluidRow(
+          textInput("search","","",placeholder = "Enter a keyword",width = '100%'))
+        ),
+        mainPanel(
+          conditionalPanel(
+            condition="input.state == home",
+            dataTableOutput("packagesTable"),
+            dataTableOutput("methodsTable"),
+            dataTableOutput("authorsTable"),
+          ),
+          conditionalPanel(
+            condition ='output.state ==packageDetail',
+            htmlOutput("packageDetail")
+          ),
+          conditionalPanel(
+            condition ='output.state == methodDetail',
+            htmlOutput("methodDetail")
+          ),
+          conditionalPanel(
+            condition ='output.state == authorDetail',
+            htmlOutput("authorDetail")
           )
-  )
+        )
+
+    )
+
 
   server <- function(input, output, session) {
 
@@ -43,6 +49,8 @@ meldaKB <- function(){
     rv$packageDetail = data.frame()
     rv$packageMethods = data.frame()
 
+    rv$isSearching = FALSE
+    rv$state = "home"
     rv$methodDetail = ''
     rv$authorDetail = ""
     rv$packageName = ''
@@ -55,6 +63,7 @@ meldaKB <- function(){
 
     getPackageDetail <- function(){
       rv$packageDetailOutput = ""
+      rv$state = "packageDetail"
       packageRes <- httr::GET( paste0( url, "api/", "package-detail?package=", rv$packageName))
       contents <- content(packageRes)$result
 
@@ -69,21 +78,21 @@ meldaKB <- function(){
       }
 
       for(i in 1:length(content(packageRes)$result$methods)){
-        rv$packageDetailOutput <- paste(rv$packageDetailOutput,'<hr><ul>',
-                                        "<li><strong>Name</strong>:",
+        rv$packageDetailOutput <- paste(rv$packageDetailOutput,
+                                        "<strong>Name</strong>:",
                                         content(packageRes)$result$methods[[i]]$name,
-                                        "</li><br>",
-                                        "<li><strong>Description</strong>",
+                                        "<br>",
+                                        "<strong>Description</strong>",
                                         content(packageRes)$result$methods[[i]]$description,
-                                        "</li><br>",
-                                        "<li><strong>Arguments</strong>",
+                                        "<br>",
+                                        "<strong>Arguments</strong>",
                                         content(packageRes)$result$methods[[i]]$argument,
-                                        "</li><br>",
-                                        '</ul><hr>')
+                                        '<hr>')
       }
     }
 
     getauthorPackageDetail <- function(){
+      rv$state ="authorDetail"
       rv$authorDetailOutput = ""
       authorRes <- httr::GET( paste0( url, "api/", "package-detail?package=", rv$authorPackageName))
       contents <- content(authorRes)$result
@@ -99,21 +108,21 @@ meldaKB <- function(){
       }
 
       for(i in 1:length(content(authorRes)$result$methods)){
-        rv$authorDetailOutput <- paste(rv$authorDetailOutput,'<hr><ul>',
-                                       "<li><strong>Name</strong>:",
+        rv$authorDetailOutput <- paste(rv$authorDetailOutput,
+                                       "<strong>Name</strong>:",
                                        content(authorRes)$result$methods[[i]]$name,
-                                       "</li><br>",
-                                       "<li><strong>Description</strong>",
+                                       "<br><strong>Description</strong>",
                                        content(authorRes)$result$methods[[i]]$description,
-                                       "</li><br>",
-                                       "<li><strong>Arguments</strong>",
+                                       "<br>",
+                                       "<strong>Arguments</strong>",
                                        content(authorRes)$result$methods[[i]]$argument,
-                                       "</li><br>",
-                                       '</ul><hr>')
+                                       "<br>",
+                                       '<hr>')
         }
     }
 
     getMethodDetail <- function(){
+      rv$state = "methodDetail"
       rv$methodDetailOutput <- ""
       methodRes <- httr::GET( paste0( url, "api/", "method-detail?package=",
                                        rv$methodPackageName,"&method=",
@@ -143,10 +152,15 @@ meldaKB <- function(){
                                         content(methodRes)$result$argument[[i]]$description,
                                         "<br><strong>Argument Id</strong>",
                                         content(methodRes)$result$argument[[i]]$argumentId,
-                                        '<br>')
+                                        '<hr>')
       }
     }
 
+    resetDetailOutput <- function(){
+      rv$packageDetailOutput = ''
+      rv$authorDetailOutput = ''
+      rv$methodDetailOutput = ''
+    }
     observeEvent( input$packagesTable_cell_clicked , {
       req( length( input$packagesTable_cell_clicked) > 0)
       if( input$packagesTable_cell_clicked$col == 1){
@@ -158,7 +172,6 @@ meldaKB <- function(){
 
     observeEvent(input$authorsTable_cell_clicked , {
       req( length(input$authorsTable_cell_clicked) > 0 )
-      print(input$authorsTable_cell_clicked)
       if( input$authorsTable_cell_clicked$col == 2){
         info = input$authorsTable_cell_clicked
         rv$authorPackageName <- info$value
@@ -186,10 +199,15 @@ meldaKB <- function(){
       if(input$exitBtn){
         stopApp()
       }
-
+      if(input$homeBtn){
+        rv$state="home"
+        resetDetailOutput()
+      }
     })
     observe({
       req(input$search)
+      resetDetailOutput()
+      rv$state = "home"
       resPackage <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=package"))
       resMethod <- httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=method"))
       resAuthor <-  httr::GET(paste0(url,"search?q=",URLencode(input$search),"&size=100&in=author"))
@@ -205,7 +223,6 @@ meldaKB <- function(){
 
       rv$authors = data.frame(author = sapply(httr::content(resAuthor)$packages,function(x) x$author )
                               ,package = sapply(httr::content(resAuthor)$packages,function(x) x$name ))
-
 
       output$packageDetail <- renderText({
         req(rv$packageDetailOutput)
@@ -224,9 +241,10 @@ meldaKB <- function(){
     })
 
     output$packagesTable <- DT::renderDataTable({
-      req(rv$packages)
-      data.frame(rv$packages)
-
+      if(rv$state == "home"){
+        req(rv$packages)
+        data.frame(rv$packages)
+      }
       },class = 'display compact',
         selection = "single",
       options = list(
@@ -243,8 +261,10 @@ meldaKB <- function(){
       )
 
     output$methodsTable <- DT::renderDataTable({
-      req(rv$methods)
-      rv$methods
+      if(rv$state == "home"){
+        req(rv$methods)
+        rv$methods
+      }
       },class = "display compact",
       selection = "single",
       options = list(
@@ -260,9 +280,11 @@ meldaKB <- function(){
         ))), callback = JS('table.page(3).draw(false);'))
 
     output$authorsTable <- DT::renderDataTable({
-      req(rv$authors)
-      rv$authors
-    },class = "display compact",
+      if( rv$state == "home"){
+        req(rv$authors)
+        rv$authors
+      }
+      },class = "display compact",
       selection = "single",
     options = list(
       dom = 'tp',
@@ -286,8 +308,10 @@ meldaKB <- function(){
           '<a href="https://www.melda.io/" style="float:left">'
         )
       })
+
   }
-  runGadget(shinyApp(ui, server),  viewer = paneViewer())
+  shinyApp(ui, server)
 }
 meldaKB()
+
 
