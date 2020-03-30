@@ -9,8 +9,5 @@ License: GPL 3
 Encoding: UTF-8
 LazyData: true
 Imports:
-    DT,
-    httr,
-    miniUI,
     shiny,
     rstudioapi
