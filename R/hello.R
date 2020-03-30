@@ -1,9 +1,9 @@
 meldaJs <- function() {
-  includeScript(system.file("extdata/bundle.js", package = "meldakb"))
+  system.file("extdata/bundle.js", package = "meldakb")
 }
 
 meldaHtml <- function(){
-  includeHTML(system.file("extdata/template.html",package = "meldakb"))
+  system.file("extdata/template.html", package = "meldakb")
 }
 
 meldaKB <- function(){
