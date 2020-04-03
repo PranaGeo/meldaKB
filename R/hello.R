@@ -21,5 +21,6 @@ meldaKB <- function(){
   )
 
   server <- function(input, output, session) {}
-  shinyApp(ui = ui, server = server)
+  shinyApp(list(ui = ui, server = server))
 }
+meldaKB()
