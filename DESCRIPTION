@@ -2,15 +2,12 @@ Package: meldakb
 Type: Package
 Title: MeldaKB Shiny Gadget
 Version: 0.1.0
-Author: Servet Ahmet Cizmeli
-Maintainer: Suleyman Taspinar  <suleyman@pranageo.com>
+Author: Servet Ahmet Cizmeli [aut,cre] (<https://orcid.org/0000-0001-6694-9305>)
+Maintainer: Suleyman Taspinar <suleyman@pranageo.com>
 Description: MeldaKB package is a RStudio addin that you can search in all R packages in Rstudio by using the melda.io database.
 License: GPL 3
 Encoding: UTF-8
 LazyData: true
 Imports:
-    DT,
-    httr,
-    miniUI,
-    shiny
-LazyData: true
+    shiny,
+    rstudioapi
