@@ -9,18 +9,22 @@ meldaHtml <- function(){
 meldaKB <- function(){
   library(shiny)
 
-  ui <- htmlTemplate(meldaHtml(),
-                     exitButton =tags$button(
-                       id = 'Close',
-                       type = "button",
-                       class = "btn action-button",
-                       onclick = "setTimeout(function(){window.close();window.parent.postMessage('disconnected', '*');},500);",
-                       "Close window"
-                     ),
+  ui <- fluidPage(htmlTemplate(meldaHtml(),
+                               exitButton =tags$button(
+                                 id = 'close',
+                                 type = "button",
+                                 class = "btn btn-primary btn-sm action-button",
+                                 "Exit"
+                               ),
                      bundle = includeScript(meldaJs())
-  )
 
-  server <- function(input, output, session) {}
-  shinyApp(list(ui = ui, server = server))
+  ))
+
+  server <- function(input, output, session) {
+    observe({
+      if (input$close) stopApp()
+    })
+  }
+  runApp(list(ui = ui, server = server),launch.browser = T)
 }
 meldaKB()
