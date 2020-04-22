@@ -25,5 +25,5 @@ meldaKB <- function(){
       if (input$close) stopApp()
     })
   }
-  runApp(list(ui = ui, server = server),launch.browser = T)
+  runApp(list(ui = ui, server = server))
 }
